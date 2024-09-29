@@ -19,3 +19,13 @@
 
 # Go workspace file
 go.work
+
+.project
+.pydevproject
+.idea
+.env
+
+
+/test
+/bin
+
