@@ -10,9 +10,9 @@ import (
 )
 
 func main() {
-    config.InitConfig()
-    db.InitDB(config.DataSourceName)
-    defer db.CloseDB()
+    config.Init()
+    db.Init(config.DataSourceName)
+    defer db.Close()
     handlers.InitHandlers()
 
     http.HandleFunc(config.IndexPath, handlers.IndexHandler)

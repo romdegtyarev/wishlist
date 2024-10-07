@@ -1,6 +1,6 @@
 FROM debian:latest
 
-COPY wishlist/wishlist /wishlist
+COPY bin/wishlist /wishlist
 RUN chmod +x /wishlist
 
 CMD ["/wishlist"]

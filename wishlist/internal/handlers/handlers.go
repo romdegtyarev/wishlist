@@ -3,6 +3,7 @@ package handlers
 import (
     "log"
     "net/http"
+    "time"
     "html/template"
     "github.com/gorilla/sessions"
     "golang.org/x/crypto/bcrypt"
@@ -11,7 +12,26 @@ import (
     "wishlist/internal/db"
 )
 
+type Session struct {
+    UserID    int
+    Username  string
+    CreatedAt time.Time
+    ExpiresAt time.Time
+}
+
 var store *sessions.CookieStore
+
+func newSession(userID int, username string) *Session {
+    return &Session{
+        UserID:    userID,
+        Username:  username,
+        CreatedAt: time.Now(),
+        ExpiresAt: time.Now().Add(24 * time.Hour),
+    }
+}
+
+
+
 
 func InitHandlers() {
     store = sessions.NewCookieStore([]byte(config.SessionSecretKey))
@@ -32,7 +52,8 @@ func IndexHandler(w http.ResponseWriter, r *http.Request) {
     }
 
     tmpl := template.Must(template.ParseFiles(config.IndexTemplatePath))
-    if err := tmpl.Execute(w, user); err != nil {
+    err = tmpl.Execute(w, user)
+    if err != nil {
         log.Println("Error executing template:", err)
         http.Error(w, "Internal Server Error", http.StatusInternalServerError)
     }
@@ -43,13 +64,13 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
         username := r.FormValue("username")
         password := r.FormValue("password")
 
-        storedPassword, err := db.GetUserFromDB(username)
-        if err != nil || storedPassword == "" {
+        user, err := db.GetUser(username)
+        if err != nil || user.PasswordHash == "" {
             http.Error(w, "Invalid username or password", http.StatusUnauthorized)
             return
         }
-
-        if err := bcrypt.CompareHashAndPassword([]byte(storedPassword), []byte(password)); err != nil {
+        err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password))
+        if err != nil {
             http.Error(w, "Invalid username or password", http.StatusUnauthorized)
             return
         }
@@ -61,9 +82,10 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
             return
         }
 
-        user := db.UsersTable{Username: username}
-        session.Values["user"] = user
-        if err := session.Save(r, w); err != nil {
+        userSession := newSession(user.ID, user.Username)
+        session.Values["user"] = userSession
+        err = session.Save(r, w)
+        if err != nil {
             log.Println("Error saving session:", err)
             http.Error(w, "Internal Server Error", http.StatusInternalServerError)
             return
@@ -74,7 +96,8 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
     }
 
     tmpl := template.Must(template.ParseFiles(config.LoginTemplatePath))
-    if err := tmpl.Execute(w, nil); err != nil {
+    err := tmpl.Execute(w, nil)
+    if err != nil {
         log.Println("Error executing template:", err)
         http.Error(w, "Internal Server Error", http.StatusInternalServerError)
     }
@@ -89,7 +112,8 @@ func LogoutHandler(w http.ResponseWriter, r *http.Request) {
     }
 
     delete(session.Values, "user")
-    if err := session.Save(r, w); err != nil {
+    err = session.Save(r, w);
+    if err != nil {
         log.Println("Error saving session:", err)
         http.Error(w, "Internal Server Error", http.StatusInternalServerError)
         return

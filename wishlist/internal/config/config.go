@@ -13,9 +13,10 @@ var (
     IndexTemplatePath  string
     LoginPath          string
     LoginTemplatePath  string
+    LogoutPath         string
 )
 
-func InitConfig() {
+func Init() {
     Port = os.Getenv("PORT")
     if Port == "" {
         log.Fatal("Error: Environment variable PORT is not set.")
@@ -49,6 +50,11 @@ func InitConfig() {
     LoginTemplatePath = os.Getenv("LOGIN_TEMPLATE_PATH")
     if LoginTemplatePath == "" {
         log.Fatal("Error: Environment variable LOGIN_TEMPLATE_PATH is not set.")
+    }
+
+    LogoutPath = os.Getenv("LOGOUT_PATH")
+    if LogoutPath == "" {
+        log.Fatal("Error: Environment variable LOGOUT_PATH is not set.")
     }
 }
 
